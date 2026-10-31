@@ -1,12 +1,13 @@
-name: "Experimental Release"
+name: "Windows Release Build"
 
-concurrency: experimental-release
+concurrency: windows-release
 
 on:
   push:
     branches:
       - main
     paths-ignore: [docs/**, scripts/**, "**.md", "**.mdx"]
+  workflow_dispatch:
 
 jobs:
   build-translations:
@@ -19,5 +20,10 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       version-label: experimental
-      upload-to-release: true
+      upload-to-release: false
+      upload-artifacts: true
+      matrix-json: |
+        [
+          { "name": "Windows MSVC", "platform": "windows", "artifact": "windows-tiles-x64-msvc", "os": "windows-2022", "arch": "x64", "tiles": true, "sound": true, "ext": "zip", "content-type": "application/zip", "upload-artifact": true }
+        ]
     secrets: inherit
