@@ -19,8 +19,6 @@ jobs:
   build-switch:
     name: Build Nintendo Switch NRO
     runs-on: ubuntu-latest
-    container:
-      image: devkitpro/switch-portlibs:latest
 
     steps:
       - name: Checkout repository
@@ -28,35 +26,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install host build tools
-        run: |
-          apt-get update && apt-get install -y python3 python3-pip gettext zip
-
-      - name: Configure CMake
-        run: |
-          export DEVKITPRO=/opt/devkitpro
-          export DEVKITA64=$DEVKITPRO/devkitA64
-          cmake -B build-switch \
-            -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DTILES=ON \
-            -DSOUND=OFF \
-            -DLOCALIZE=OFF \
-            -DTESTS=OFF
-
-      - name: Compile CataclysmBN NRO
-        run: |
-          cmake --build build-switch --target CataclysmBN-nro -j$(nproc)
-
-      - name: Package Switch Release
-        run: |
-          mkdir -p package/CataclysmBN
-          cp build-switch/CataclysmBN.nro package/CataclysmBN/
-          cp -r data package/CataclysmBN/
-          cp -r gfx package/CataclysmBN/
-          cd package
-          zip -r ../CataclysmBN-Switch.zip CataclysmBN
-          cd ..
+      - name: Build with devkitPro switch-portlibs
+        uses: devkitpro/actions/switch-portlibs@master
+        with:
+          run: |
+            apt-get update && apt-get install -y python3 python3-pip gettext zip
+            cmake -B build-switch \
+              -DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/Switch.cmake \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DTILES=ON \
+              -DSOUND=OFF \
+              -DLOCALIZE=OFF \
+              -DTESTS=OFF
+            cmake --build build-switch --target CataclysmBN-nro -j$(nproc)
+            mkdir -p package/CataclysmBN
+            cp build-switch/CataclysmBN.nro package/CataclysmBN/
+            cp -r data package/CataclysmBN/
+            cp -r gfx package/CataclysmBN/
+            cd package
+            zip -r ../CataclysmBN-Switch.zip CataclysmBN
+            cd ..
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
