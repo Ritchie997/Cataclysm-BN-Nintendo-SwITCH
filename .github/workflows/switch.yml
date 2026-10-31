@@ -28,10 +28,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fix devkitPro pacman mirrors
+        run: |
+          # devkitPro moved its package server from pkg.devkitpro.org to downloads.devkitpro.org
+          # Also set user-agent to bypass Cloudflare bot filtering on CI
+          find /etc/pacman.d /opt/devkitpro/pacman/etc/pacman.d -type f -exec sed -i 's|pkg.devkitpro.org|downloads.devkitpro.org|g' {} + 2>/dev/null || true
+          for conf in /etc/pacman.conf /opt/devkitpro/pacman/etc/pacman.conf; do
+            if [ -f "$conf" ]; then
+              sed -i 's|^#\?XferCommand = .*|XferCommand = /usr/bin/curl -g -q --retry 3 --retry-delay 3 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" %u -o %o|g' "$conf"
+            fi
+          done
+
       - name: Install Switch dependencies
         run: |
-          dkp-pacman -Syu --noconfirm
-          dkp-pacman -S --noconfirm \
+          dkp-pacman -Sy --noconfirm
+          dkp-pacman -S --noconfirm --needed \
             switch-pkg-config \
             switch-sdl2 \
             switch-sdl2_image \
