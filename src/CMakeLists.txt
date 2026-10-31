@@ -7,6 +7,12 @@ list(FILTER CATACLYSM_BN_SOURCES EXCLUDE REGEX "/src/(lua|sol|third-party)/")
 
 list(REMOVE_ITEM CATACLYSM_BN_SOURCES ${MAIN_CPP} ${MESSAGES_CPP})
 
+if (NINTENDO_SWITCH AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    set_source_files_properties(
+            ${CMAKE_CURRENT_SOURCE_DIR}/ranged.cpp
+            PROPERTIES COMPILE_OPTIONS "-Wno-error=free-nonheap-object")
+endif ()
+
 # Lua binding translation units are template-heavy and primarily run at startup;
 # compile them with no optimization to reduce build times.
 file(GLOB CATALUA_BINDINGS_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/src/catalua_bindings*.cpp)
@@ -183,6 +189,20 @@ if (TILES)
 
     if (RELEASE)
         install(TARGETS cataclysm-bn-tiles RUNTIME)
+    endif ()
+
+    if (NINTENDO_SWITCH)
+        set(CATACLYSM_BN_SWITCH_NACP "${CMAKE_CURRENT_BINARY_DIR}/CataclysmBN.nacp")
+        nx_generate_nacp(
+                OUTPUT "${CATACLYSM_BN_SWITCH_NACP}"
+                NAME "Cataclysm: Bright Nights"
+                AUTHOR "cataclysmbn + Switch contributors"
+                VERSION "0.1.0")
+        nx_create_nro(
+                CataclysmBN-nro
+                TARGET cataclysm-bn-tiles
+                OUTPUT "${CMAKE_BINARY_DIR}/CataclysmBN.nro"
+                NACP "${CATACLYSM_BN_SWITCH_NACP}")
     endif ()
 
     set_target_properties(cataclysm-bn-tiles PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")

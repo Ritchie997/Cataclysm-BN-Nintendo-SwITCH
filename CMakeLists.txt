@@ -148,6 +148,10 @@ if ("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
     endif ()
 endif ()
 
+if (NINTENDO_SWITCH)
+    add_definitions(-D__SWITCH__ -DNINTENDO_SWITCH)
+endif ()
+
 include(CheckCXXCompilerFlag)
 
 #FIXME: Add dest build choice: m32 for 32 bit or m64 for 64 bit version

@@ -2344,7 +2344,11 @@ void options_manager::add_options_graphics()
             }
         };
         for( auto &&[option, option_name, option_desc] : font_size_options ) {
+#if defined(__SWITCH__)
+            add( option, page_id, option_name, option_desc, 8, 100, 15, COPT_CURSES_HIDE );
+#else
             add( option, page_id, option_name, option_desc, 8, 100, 16, COPT_CURSES_HIDE );
+#endif
         }
     } );
 #endif // TILES
@@ -2375,7 +2379,13 @@ void options_manager::add_options_graphics()
 
     add( "TILES", graphics, translate_marker( "Choose tileset" ),
          translate_marker( "Choose the tileset you want to use." ),
-         build_tilesets_list(), "UNDEAD_PEOPLE_BASE", COPT_CURSES_HIDE
+         build_tilesets_list(),
+#if defined(__SWITCH__)
+         "RetroDays",
+#else
+         "UNDEAD_PEOPLE_BASE",
+#endif
+         COPT_CURSES_HIDE
        ); // populate the options dynamically
 
     get_option( "TILES" ).setPrerequisite( "USE_TILES" );
@@ -2389,7 +2399,13 @@ void options_manager::add_options_graphics()
 
     add( "OVERMAP_TILES", graphics, translate_marker( "Choose overmap tileset" ),
          translate_marker( "Choose the overmap tileset you want to use." ),
-         build_tilesets_list(), "UNDEAD_PEOPLE_BASE", COPT_CURSES_HIDE
+         build_tilesets_list(),
+#if defined(__SWITCH__)
+         "RetroDays",
+#else
+         "UNDEAD_PEOPLE_BASE",
+#endif
+         COPT_CURSES_HIDE
        ); // populate the options dynamically
 
     get_option( "OVERMAP_TILES" ).setPrerequisite( "USE_TILES_OVERMAP" );

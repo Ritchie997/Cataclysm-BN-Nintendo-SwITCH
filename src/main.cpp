@@ -245,6 +245,19 @@ int main( int argc, char *argv[] )
     std::string external_storage_path( SDL_GetAndroidExternalStoragePath() );
 
     PATH_INFO::init_base_path( external_storage_path );
+#elif defined(__SWITCH__)
+    // Homebrew launchers do not guarantee a particular working directory.
+    // Resolve resources relative to the NRO so data/, gfx/, and user saves can
+    // live together in sdmc:/switch/CataclysmBN/.
+    std::string switch_base_path = ".";
+    if( argc > 0 && argv[0] != nullptr && argv[0][0] != '\0' ) {
+        std::string nro_path( argv[0] );
+        size_t last_slash = nro_path.find_last_of( "/\\" );
+        if( last_slash != std::string::npos ) {
+            switch_base_path = nro_path.substr( 0, last_slash );
+        }
+    }
+    PATH_INFO::init_base_path( switch_base_path );
 #else
     // Set default file paths
 #if defined(PREFIX)
@@ -256,6 +269,8 @@ int main( int argc, char *argv[] )
 
 #if defined(__ANDROID__)
     PATH_INFO::init_user_dir( external_storage_path );
+#elif defined(__SWITCH__)
+    PATH_INFO::init_user_dir( switch_base_path + "/user" );
 #else
 #   if defined(USE_HOME_DIR) || defined(USE_XDG_DIR)
     PATH_INFO::init_user_dir( "" );
@@ -898,7 +913,7 @@ int main( int argc, char *argv[] )
 
     catacurses::curs_set( 0 ); // Invisible cursor here, because MAPBUFFER.load() is crash-prone
 
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(__SWITCH__)
     struct sigaction sigIntHandler;
     sigIntHandler.sa_handler = signal_handler;
     sigemptyset( &sigIntHandler.sa_mask );

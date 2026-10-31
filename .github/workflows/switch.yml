@@ -1,0 +1,78 @@
+name: Nintendo Switch Build
+
+on:
+  push:
+    branches:
+      - main
+      - switch-port
+      - switch*
+    paths-ignore:
+      - 'docs/**'
+      - 'README*.md'
+  pull_request:
+    branches:
+      - main
+      - switch-port
+  workflow_dispatch:
+
+jobs:
+  build-switch:
+    name: Build Nintendo Switch NRO
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Switch dependencies
+        run: |
+          dkp-pacman -Syu --noconfirm
+          dkp-pacman -S --noconfirm \
+            switch-pkg-config \
+            switch-sdl2 \
+            switch-sdl2_image \
+            switch-sdl2_ttf \
+            switch-freetype \
+            switch-libpng \
+            switch-libjpeg-turbo \
+            switch-libwebp \
+            switch-zlib \
+            libnx
+          apt-get update && apt-get install -y python3 python3-pip gettext zip
+
+      - name: Configure CMake
+        run: |
+          export DEVKITPRO=/opt/devkitpro
+          export DEVKITA64=$DEVKITPRO/devkitA64
+          cmake -B build-switch \
+            -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DTILES=ON \
+            -DSOUND=OFF \
+            -DLOCALIZE=OFF \
+            -DTESTS=OFF
+
+      - name: Compile CataclysmBN NRO
+        run: |
+          cmake --build build-switch --target CataclysmBN-nro -j$(nproc)
+
+      - name: Package Switch Release
+        run: |
+          mkdir -p package/CataclysmBN
+          cp build-switch/CataclysmBN.nro package/CataclysmBN/
+          cp -r data package/CataclysmBN/
+          cp -r gfx package/CataclysmBN/
+          cd package
+          zip -r ../CataclysmBN-Switch.zip CataclysmBN
+          cd ..
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CataclysmBN-Switch
+          path: CataclysmBN-Switch.zip
+          retention-days: 14

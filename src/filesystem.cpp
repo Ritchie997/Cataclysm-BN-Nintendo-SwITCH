@@ -28,6 +28,10 @@
 #   include "wdirent.h"
 #   pragma GCC diagnostic pop
 #   include <direct.h>
+#elif defined(__SWITCH__)
+#   include <switch.h>
+#   include <dirent.h>
+#   include <unistd.h>
 #else
 #   include <dirent.h>
 #   include <unistd.h>
@@ -115,12 +119,53 @@ bool rename_file( const std::string &old_path, const std::string &new_path )
                MOVEFILE_REPLACE_EXISTING
            ) != 0;
 }
+#elif defined(__SWITCH__)
+bool rename_file( const std::string &old_path, const std::string &new_path )
+{
+    // Horizon's filesystem rename operation cannot replace an existing file.
+    // Keep the previous destination as a rollback copy until promotion succeeds.
+    if( old_path == new_path ) {
+        return true;
+    }
+    const std::string backup_path = new_path + ".bak";
+    const bool destination_exists = file_exist( new_path );
+    if( destination_exists ) {
+        remove_file( backup_path );
+        if( rename( new_path.c_str(), backup_path.c_str() ) != 0 ) {
+            return false;
+        }
+    }
+    if( rename( old_path.c_str(), new_path.c_str() ) != 0 ) {
+        if( destination_exists ) {
+            rename( backup_path.c_str(), new_path.c_str() );
+        }
+        return false;
+    }
+    if( destination_exists ) {
+        remove_file( backup_path );
+    }
+    return true;
+}
 #else
 bool rename_file( const std::string &old_path, const std::string &new_path )
 {
     return rename( old_path.c_str(), new_path.c_str() ) == 0;
 }
 #endif
+
+bool commit_filesystem_changes()
+{
+#if defined(__SWITCH__)
+    const Result result = fsdevCommitDevice( "sdmc" );
+    if( R_FAILED( result ) ) {
+        DebugLog( DL::Error, DC::Main ) << "fsdevCommitDevice(sdmc) failed with result " << result;
+        return false;
+    }
+    return true;
+#else
+    return true;
+#endif
+}
 
 bool remove_directory( const std::string &path )
 {

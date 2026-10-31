@@ -40,6 +40,11 @@ bool remove_tree( const std::string &path );
  */
 bool rename_file( const std::string &old_path, const std::string &new_path );
 /**
+ * Commit any unwritten filesystem buffers to storage media (e.g. SD card on Switch).
+ * @return true on success, false on failure.
+ */
+bool commit_filesystem_changes();
+/**
  * Check if can write to the given directory (write permission, disk space).
  * @return false if cannot write or if unable to check.
  */

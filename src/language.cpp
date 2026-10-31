@@ -153,6 +153,49 @@ static std::string getSystemUILang()
 {
     return getLangFromLCID( GetUserDefaultUILanguage() );
 }
+#elif defined(__SWITCH__)
+#include <switch.h>
+static std::string getSystemUILang()
+{
+    if( R_FAILED( setInitialize() ) ) {
+        return "en";
+    }
+    u64 language_code = 0;
+    SetLanguage language = SetLanguage_ENUS;
+    const Result get_result = setGetSystemLanguage( &language_code );
+    const Result make_result = R_SUCCEEDED( get_result ) ?
+                               setMakeLanguage( language_code, &language ) : get_result;
+    setExit();
+    if( R_FAILED( get_result ) || R_FAILED( make_result ) ) {
+        return "en";
+    }
+    if( language == SetLanguage_ZHCN || language == SetLanguage_ZHHANS ||
+        language == SetLanguage_ZHTW || language == SetLanguage_ZHHANT ) {
+        return "zh_CN";
+    }
+    if( language == SetLanguage_RU ) {
+        return "ru";
+    }
+    if( language == SetLanguage_JA ) {
+        return "ja";
+    }
+    if( language == SetLanguage_KO ) {
+        return "ko";
+    }
+    if( language == SetLanguage_DE ) {
+        return "de";
+    }
+    if( language == SetLanguage_FR ) {
+        return "fr";
+    }
+    if( language == SetLanguage_ES ) {
+        return "es_ES";
+    }
+    if( language == SetLanguage_IT ) {
+        return "it_IT";
+    }
+    return "en";
+}
 #elif !defined(MACOSX)
 // Linux / Android
 static std::string getSystemUILang()

@@ -4487,6 +4487,7 @@ bool game::save( bool quitting )
             world_generator->active_world->info->add_save( save_t::from_save_id( u.get_save_id() ) );
 
             auto duration = world->commit_save_tx();
+            commit_filesystem_changes();
             add_msg( m_info, _( "World Saved (took %dms)." ), duration );
             return true;
         }

@@ -52,6 +52,10 @@
 #    include "wcwidth.h"
 #    include "worldfactory.h"
 
+#    if defined(__SWITCH__)
+#    include <switch.h>
+#    endif
+
 #    include <algorithm>
 #    include <array>
 #    include <cassert>
@@ -386,6 +390,10 @@ static void WinCreate()
         joystick = nullptr;
     }
     SDL_free( joystick_ids );
+
+#if defined(__SWITCH__)
+    hidInitializeTouchScreen();
+#endif
 
     // Set up audio mixer.
     init_sound();
@@ -3390,11 +3398,55 @@ static void CheckMessages()
             }
             break;
             case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
+#if defined(__SWITCH__)
+                switch( ev.jbutton.button ) {
+                    case 0: // Physical Nintendo B -> Escape
+                        last_input = input_event( KEY_ESCAPE, input_event_t::keyboard );
+                        break;
+                    case 1: // Physical Nintendo A -> Enter
+                        last_input = input_event( '\n', input_event_t::keyboard );
+                        break;
+                    case 2: // Physical Nintendo Y
+                        last_input = input_event( JOY_2, input_event_t::gamepad );
+                        break;
+                    case 3: // Physical Nintendo X -> 'I' (Inventory)
+                        last_input = input_event( 'I', input_event_t::keyboard );
+                        break;
+                    case 4: // Physical Minus
+                        last_input = input_event( KEY_ESCAPE, input_event_t::keyboard );
+                        break;
+                    case 6: // Physical Plus -> Enter
+                        last_input = input_event( '\n', input_event_t::keyboard );
+                        break;
+                    case 8: // Physical Right-stick click -> JOY_5
+                        last_input = input_event( JOY_5, input_event_t::gamepad );
+                        break;
+                    case 9: // Physical Nintendo R -> Shift+Tab
+                        last_input = input_event( KEY_BTAB, input_event_t::keyboard );
+                        break;
+                    case 10: // Physical Nintendo L -> Tab
+                        last_input = input_event( '\t', input_event_t::keyboard );
+                        break;
+                    default:
+                        last_input = input_event( ev.jbutton.button, input_event_t::gamepad );
+                        break;
+                }
+#else
                 last_input = input_event( ev.jbutton.button, input_event_t::keyboard );
+#endif
                 break;
             case SDL_EVENT_JOYSTICK_AXIS_MOTION:
-                // on gamepads, the axes are the analog sticks
-                // TODO: somehow get the "digipad" values from the axes
+#if defined(__SWITCH__)
+                if( ev.jaxis.axis == 4 || ev.jaxis.axis == 5 ) { // ZL / ZR triggers
+                    if( ev.jaxis.value > 16000 ) {
+                        if( ev.jaxis.axis == 4 ) {
+                            last_input = input_event( 'x', input_event_t::keyboard ); // ZL = look around
+                        } else {
+                            last_input = input_event( ' ', input_event_t::keyboard ); // ZR = space
+                        }
+                    }
+                }
+#endif
                 break;
             case SDL_EVENT_MOUSE_MOTION:
                 if( get_option<std::string>( "HIDE_CURSOR" ) == "show" ||
